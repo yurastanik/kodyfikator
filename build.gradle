@@ -19,6 +19,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	implementation group: 'org.apache.poi', name: 'poi', version: '5.0.0'
 	implementation group: 'org.apache.poi', name: 'poi-ooxml', version: '5.2.2'
+	implementation group: 'org.json', name: 'json', version: '20220320'
 }
 
 tasks.named('test') {
