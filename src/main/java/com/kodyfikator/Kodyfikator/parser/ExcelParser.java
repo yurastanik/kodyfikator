@@ -80,8 +80,6 @@ public class ExcelParser {
         Sheet sheet = workBook.getSheetAt(0);
         Iterator<Row> it = sheet.rowIterator();
 
-        ArrayList<DataRow> dataList = new ArrayList<>();
-
         while (it.hasNext()) {
             Row row = it.next();
             if (row.getRowNum() > 2) {
@@ -103,11 +101,11 @@ public class ExcelParser {
                         }
                         else dataRow.setName(correctName(getValue(row.getCell(5)), getValue(row.getCell(6))));
                         dataRow.setLevel(i + 1);
-                        dataList.add(dataService.saveRow(dataRow));
+                        dataService.saveRow(dataRow);
                     }
                 }
             }
         }
-        return dataList;
+        return dataService.findAll();
     }
 }

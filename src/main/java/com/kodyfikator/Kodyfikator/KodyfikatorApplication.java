@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Import;
 
 @SpringBootApplication
-@Import({ DataService.class })
+@Import({ DataService.class})
 public class KodyfikatorApplication {
 
 	public static void main(String[] args) {

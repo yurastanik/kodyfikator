@@ -1,12 +1,15 @@
 package com.kodyfikator.Kodyfikator.controller;
 
+import com.kodyfikator.Kodyfikator.exception.BadRequest;
+import com.kodyfikator.Kodyfikator.exception.CodeNotFound;
 import com.kodyfikator.Kodyfikator.model.DataRow;
 import com.kodyfikator.Kodyfikator.parser.ExcelParser;
+import com.kodyfikator.Kodyfikator.response.ResponseHandler;
 import com.kodyfikator.Kodyfikator.service.DataService;
+import com.kodyfikator.Kodyfikator.utils.CodeChecker;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,7 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/get")
@@ -29,25 +31,20 @@ public class DataController {
     }
 
     @RequestMapping(value="/division/{division_code}", method=RequestMethod.GET)
-    public ResponseEntity<Map<String, Object>> getDivision(@PathVariable(value = "division_code") String code) {
-        if (!Helper.check(code)) return Helper.getResponse(HttpStatus.BAD_REQUEST, "error", "Request contains malformed parameter");
+    public ResponseEntity<Object> getDivision(@PathVariable(value = "division_code") String code) throws CodeNotFound, BadRequest {
+        if (!CodeChecker.check(code)) throw new BadRequest(code);
         List<DataRow> dataList = getByCode(code);
-        if (dataList.isEmpty()) return Helper.getResponse(HttpStatus.NOT_FOUND, "error", "Not Found");
+        if (dataList.isEmpty()) throw new CodeNotFound(code);
         JSONArray divisions = new JSONArray();
         for (DataRow dataRow : dataList) divisions.put(createObj(dataRow));
-        return Helper.getResponse(HttpStatus.OK, "divisions", divisions.toList());
+        return ResponseHandler.getResponse("divisions", divisions.toList());
     }
 
     @RequestMapping(value="/division", method=RequestMethod.GET)
-    public ResponseEntity<Map<String, Object>> getDivisions() {
+    public ResponseEntity<Object> getDivisions() {
         JSONArray divisions = new JSONArray();
         for (DataRow dataRow : this.dataService.findByParent_id(null)) divisions.put(createObj(dataRow));
-        return Helper.getResponse(HttpStatus.OK, "divisions", divisions.toList());
-    }
-
-    @RequestMapping(method=RequestMethod.POST)
-    public ResponseEntity<Map<String, Object>> postReq() {
-        return Helper.getResponse(HttpStatus.METHOD_NOT_ALLOWED, "error", "Method Not Allowed");
+        return ResponseHandler.getResponse("divisions", divisions.toList());
     }
 
     @RequestMapping(value = "/updateData", method = RequestMethod.GET)
@@ -75,33 +72,5 @@ public class DataController {
             return dataList;
         }
         return Collections.emptyList();
-    }
-}
-
-class Helper {
-
-    public static boolean isNumeric(String strNum) {
-        if (strNum == null) {
-            return false;
-        }
-        try {
-            Double.parseDouble(strNum);
-        } catch (NumberFormatException nfe) {
-            return false;
-        }
-        return true;
-    }
-
-    public static boolean check(String code) {
-        return (code.length() == 19 && code.contains("UA") && isNumeric(code.replace("UA", "")));
-    }
-
-    public static ResponseEntity<Map<String, Object>> getResponse(HttpStatus httpStatus, String key, String value) {
-        return new ResponseEntity<>(new JSONObject().put(key, value).toMap(), httpStatus);
-    }
-
-    public static ResponseEntity<Map<String, Object>> getResponse(HttpStatus httpStatus, String key, List<Object> value) {
-        return new ResponseEntity<>(new JSONObject().put(key, value).toMap(), httpStatus);
-
     }
 }
