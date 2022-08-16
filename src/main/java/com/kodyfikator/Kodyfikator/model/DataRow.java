@@ -1,9 +1,7 @@
 package com.kodyfikator.Kodyfikator.model;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
+import java.util.Objects;
 
 @Entity
 @Table(name = "data")
@@ -13,9 +11,12 @@ public class DataRow {
     private Long id;
 
     private String code;
-    @Column(name = "parent_id")
+
+    @JoinColumn(name = "parent_id")
     private Long parentId;
+
     private String name;
+
     private int level;
 
     public Long getId() {
@@ -56,5 +57,14 @@ public class DataRow {
 
     public void setLevel(int level) {
         this.level = level;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!Objects.equals(((DataRow) obj).getId(), this.getId())) return false;
+        else if (!Objects.equals(((DataRow) obj).getName(), this.getName())) return false;
+        else if (!Objects.equals(((DataRow) obj).getLevel(), this.getLevel())) return false;
+        else if (!Objects.equals(((DataRow) obj).getParent_id(), this.getParent_id())) return false;
+        else return Objects.equals(((DataRow) obj).getCode(), this.getCode());
     }
 }

@@ -1,5 +1,6 @@
 package com.kodyfikator.Kodyfikator.controller;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.kodyfikator.Kodyfikator.exception.BadRequest;
 import com.kodyfikator.Kodyfikator.exception.CodeNotFound;
 import com.kodyfikator.Kodyfikator.model.DataRow;
@@ -11,16 +12,20 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
-@RestController
+@Controller
 @RequestMapping("/get")
+@JsonIgnoreProperties(value = { "hibernateLazyInitializer", "handler" })
 public class DataController {
 
     private final DataService dataService;
@@ -47,10 +52,18 @@ public class DataController {
         return ResponseHandler.getResponse("divisions", divisions.toList());
     }
 
-    @RequestMapping(value = "/updateData", method = RequestMethod.GET)
-    public List<DataRow> updateData() {
+
+    @RequestMapping(value = "/updateData")
+    public String uploadFile() {
+        return "uploadform";
+    }
+
+
+    @RequestMapping(value = "/upload")
+    public String upload(@RequestParam("file") MultipartFile file) throws IOException {
         ExcelParser excelParser = new ExcelParser(this.dataService);
-        return excelParser.parse("kodyfikator-1.xlsx");
+        excelParser.parse(file.getBytes());
+        return "redirect:/get/division";
     }
 
     private JSONObject createObj(DataRow dataRow) {

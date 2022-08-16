@@ -5,12 +5,13 @@ import com.kodyfikator.Kodyfikator.service.DataService;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -65,21 +66,38 @@ public class ExcelParser {
         return endName.toString();
     }
 
+//    public void parse(String fileName) {
+//        InputStream inputStream;
+//        XSSFWorkbook workBook = null;
+//        try {
+//            inputStream = new FileInputStream(fileName);
+//            workBook = new XSSFWorkbook(inputStream);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        assert workBook != null;
+//        Sheet sheet = workBook.getSheetAt(0);
+//        getData(sheet);
+//    }
 
-    public List<DataRow> parse(String fileName) {
+    public List<DataRow> parse(byte[] file) {
         InputStream inputStream;
-        XSSFWorkbook workBook = null;
+        SXSSFWorkbook workBook = null;
         try {
-            inputStream = new FileInputStream(fileName);
-            workBook = new XSSFWorkbook(inputStream);
+            inputStream = new ByteArrayInputStream(file);
+            workBook = new SXSSFWorkbook(new XSSFWorkbook(inputStream));
         } catch (IOException e) {
             e.printStackTrace();
         }
-
         assert workBook != null;
-        Sheet sheet = workBook.getSheetAt(0);
-        Iterator<Row> it = sheet.rowIterator();
+        Sheet sheet = workBook.getXSSFWorkbook().getSheetAt(0);
+        return getData(sheet);
+    }
 
+
+    public List<DataRow> getData(Sheet sheet) {
+        Iterator<Row> it = sheet.rowIterator();
+        DataRow dataRow = new DataRow();
         while (it.hasNext()) {
             Row row = it.next();
             if (row.getRowNum() > 2) {
@@ -87,22 +105,28 @@ public class ExcelParser {
                     System.out.println(row.getRowNum());
                 }
                 if (getValue(row.getCell(0)).length() != 19) break;
-                for (int i = 4; i >= 0; i--) {
-                    Cell cell = row.getCell(i);
-                    if (!getValue(cell).isEmpty() && !this.dataService.isExist(getValue(cell))) {
-                        DataRow dataRow = new DataRow();
-                        dataRow.setId((long) (row.getRowNum() - 2));
-                        dataRow.setCode(getValue(cell));
-                        if (i != 0) {
-                            DataRow rowData = this.dataService.findByCode(getValue(row.getCell(i - 1)));
-                            dataRow.setParent_id(rowData.getId());
-                            if (i + 1 == 5) dataRow.setName(correctName(getValue(row.getCell(5)), getValue(row.getCell(6)), rowData.getName()));
-                            else dataRow.setName(correctName(getValue(row.getCell(5)), getValue(row.getCell(6))));
+                try {
+                    for (int i = 4; i >= 0; i--) {
+                        Cell cell = row.getCell(i);
+                        if (!getValue(cell).isEmpty()) {
+                            dataRow.setId((long) (row.getRowNum() - 2));
+                            dataRow.setCode(getValue(cell));
+                            if (i != 0) {
+                                DataRow rowData = this.dataService.findByCode(getValue(row.getCell(i - 1)));
+                                dataRow.setParent_id(rowData.getId());
+                                if (i + 1 == 5) dataRow.setName(correctName(getValue(row.getCell(5)), getValue(row.getCell(6)), rowData.getName()));
+                                else dataRow.setName(correctName(getValue(row.getCell(5)), getValue(row.getCell(6))));
+                            }
+                            else {
+                                dataRow.setName(correctName(getValue(row.getCell(5)), getValue(row.getCell(6))));
+                            }
+                            dataRow.setLevel(i + 1);
+//                            this.dataService.saveRow(dataRow);
+                            break;
                         }
-                        else dataRow.setName(correctName(getValue(row.getCell(5)), getValue(row.getCell(6))));
-                        dataRow.setLevel(i + 1);
-                        dataService.saveRow(dataRow);
                     }
+                } catch (java.lang.OutOfMemoryError ex) {
+                    ex.printStackTrace();
                 }
             }
         }
